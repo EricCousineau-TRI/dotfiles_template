@@ -1,3 +1,18 @@
 #!/bin/bash
 
-source ~/devel/git/git-util/git-sube
+source ~/.bash/git-util/git-sube
+
+_comp-rel-cd() {
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local bdir=$1
+    local files=$(cd $bdir/ && ls -Lpd ${cur}* 2> /dev/null)
+    COMPREPLY=($(compgen -W "${files[@]}" -- $cur))
+}
+
+complete-cd() {
+    local name=$1
+    local exp=$2
+    eval "_${name}-cd() { _comp-rel-cd ${exp}; }"
+    complete -F _${name}-cd -o nospace "${name}-cd"
+}
+complete-cd drake '$DRAKE'

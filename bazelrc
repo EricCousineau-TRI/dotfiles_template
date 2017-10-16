@@ -1,0 +1,7 @@
+build --config everything --action_env=LD_LIBRARY_PATH=
+fetch --config everything \
+    --deleted_packages=externals/snopt,externals/snopt/cppsrc,externals/snopt/csrc,externals/snopt/libf2c,externals/protobuf,externals/protobuf/util/python,externals/gflags
+test --config everything
+
+build --experimental_repository_cache /home/eacousineau/.cache/bazel-externals
+fetch --experimental_repository_cache /home/eacousineau/.cache/bazel-externals

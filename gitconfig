@@ -18,6 +18,7 @@
 	s = status -s
 	st = status -sb
 	acommit = !git add -A && git commit -m
+	ref = rev-parse --short HEAD
 	branch-get = rev-parse --abbrev-ref HEAD
 	bg = rev-parse --abbrev-ref HEAD
 	root = !pwd -P
@@ -30,3 +31,5 @@
 	ignoreSubmodules = dirty
 [fetch]
 	recurseSubmodules = false
+[rerere]
+	enabled = 1

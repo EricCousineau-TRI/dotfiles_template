@@ -34,3 +34,13 @@ build/
 *.snm
 *.vrb
 *.out
+
+*.mexa64
+
+.idea/
+cmake-build-*/
+.ipynb*
+
+_data/
+
+.sublime-project*

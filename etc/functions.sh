@@ -1,30 +1,14 @@
 #!/bin/bash
 
-mkcd() { mkdir -p "$@" && cd "${!#}"; }
-
-alias historyn="history | sed 's/^[ ]*[0-9]\+[ ]*//'"
-
-export-prepend() {
-	eval "export $1=\"$2:\$$1\""
-}
-export-append() {
-	eval "export $1=\"\$$1:$2\""
-}
-# I think there's already functionality for this... Get rid of it?
-export-default() {
-	eval "test -z \"\$$1\" && export $1=\"$2\""
+# http://musescore.org/en/node/25277#comment-98902
+mkcd() {
+	# Separate arguments so that -p can be used
+	mkdir "$@" && cd "${!#}"
 }
 
-# Set up things for prefix
-env-extend()
-{
-	local prefix=$1
-	export-prepend PYTHONPATH $prefix/lib
-	export-prepend PATH $prefix/bin
-	export-prepend LD_LIBRARY_PATH $prefix/lib
-	export-prepend PKG_CONFIG_PATH $prefix/lib/pkgconfig
-	# MAN path?
-}
+alias b="source ~/.bash_aliases"
+alias bc="source ~/.bash_completion"
+alias bash-isolate='env -i HOME=$HOME DISPLAY=$DISPLAY SHELL=$SHELL TERM=$TERM USER=$USER PATH=/usr/local/bin:/usr/bin:/bin bash --norc'
 
 xcopy() {
 	xclip -i -sel clipboard
@@ -60,7 +44,7 @@ grepx() {
 }
 # Min-grep - ignore binaries and git directories for better speed
 grepm() {
-	grep -rnI --exclude-dir=.git --exclude-dir='build*' --exclude-dir='*-build' "$@"
+	grep -rnI --exclude-dir=.git --exclude-dir='build*' --exclude-dir='*-build' --exclude-dir='bazel-*' "$@"
 }
 # Filter grep results: return only file and line number
 filt-grep-fl() {
@@ -106,11 +90,57 @@ eecho() {
 	echo >&2 "$*"
 }
 
+# Syntactic sugar for prepending / appending to a path-separator delimited list
+export-prepend() {
+	eval "export $1=\"$2:\${$1-}\""
+}
+export-append() {
+	eval "export $1=\"\${$1-}:$2\""
+}
+# I think there's already functionality for this... Get rid of it?
+export-default() {
+	eval "test -z \"\$$1\" && export $1=\"$2\""
+}
+
+# Extend an existing FHS environment (PATH, LD_LIBRARY_PATH, pkg-config, etc).
+fhs-extend()
+{
+    local python_version=2.7
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                echo "fhs-extend [--python-version <VERSION>] <PREFIX>"
+                return;;
+            --python-version)
+                python_version=$1
+                shift;;
+            *)
+                break;;
+        esac
+    done
+    local prefix=${1%/}
+    export-prepend PATH $prefix/bin
+    export-prepend LD_LIBRARY_PATH $prefix/lib
+    export-prepend PYTHONPATH $prefix/lib:$prefix/lib/python${python_version}/dist-packages:$prefix/lib/python${python_version}/site-packages
+    export-prepend PKG_CONFIG_PATH $prefix/lib/pkgconfig:$prefix/share/pkgconfig
+    # MAN path?
+    echo "[ FHS Environment extended: ${prefix} ]"
+}
+
+# Revert FHS environment variables to what is generally used in `bash-isolate`
+fhs-clear() {
+    export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+    export LD_LIBRARY_PATH=
+    export PYTHONPATH=
+    export PKG_CONFIG_PATH=
+    echo "[ FHS Environment reset ]"
+}
+
+# Change bash prompt to something minimal so that transcript can be copied and pasted.
 minimal-prompt() {
 	PROMPT_COMMAND=""
 	export PS1="$ "
 }
-
 
 # Return relative path of $1 with respect to $2
 # From: git@github.com:eacousineau/util.git:c48bf22:git-submodule-ext.sh:975
@@ -141,9 +171,9 @@ rel_path()
     fi
 }
 
+# Print out ${repo}:${sha_short}:{rel_path} for a given file path for a Git repo.
 git-ref()
 {
-    # @brief Make a succinct reference to file given a repository and its sha
     use_remote=
     if [[ "$1" == "-r" ]]; then
         use_remote=1
@@ -160,4 +190,3 @@ git-ref()
     fi
     echo "$name:$(git rev-parse --short HEAD):$rel"
 }
-
